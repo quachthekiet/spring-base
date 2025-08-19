@@ -3,18 +3,28 @@ package com.quachthekiet.base.security.jwt;
 import java.io.IOException;
 import java.io.PrintWriter;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.oauth2.jwt.BadJwtException;
 import org.springframework.security.oauth2.jwt.JwtException;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.stereotype.Component;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.quachthekiet.base.model.RestResponse;
+
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 @Component
-public class JwtEntryPoint implements AuthenticationEntryPoint {
+public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
+
+    private final ObjectMapper objectMapper;
+
+    public JwtAuthenticationEntryPoint(ObjectMapper objectMapper) {
+        this.objectMapper = objectMapper;
+    }
 
     // Xử lý khi người dùng không được phép truy cập tài nguyên
     @Override
@@ -23,28 +33,21 @@ public class JwtEntryPoint implements AuthenticationEntryPoint {
 
         // --- LOG EXCEPTION RA CONSOLE ---
         System.out.println("=== JWT AuthenticationException ===");
-        System.out.println("authException: " + authException);
+        System.out.println("Exception: " + authException);
         Throwable cause = authException.getCause();
         if (cause != null) {
-            System.out.println("Cause: " + cause);
-            cause.printStackTrace(System.out);
+            System.out.println("Exception: " + cause.getClass().getName());
         }
+
         System.out.println("===================================");
 
-        // --- TRẢ RESPONSE ---
-        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+        RestResponse<String> restResponse = new RestResponse<>();
+        restResponse.setCode(HttpStatus.UNAUTHORIZED.value());
+        restResponse.setMessage(authException.getMessage());
+
+        response.setStatus(HttpStatus.UNAUTHORIZED.value());
         response.setContentType("application/json");
-
-        String message = authException.getMessage();
-
-        if (cause instanceof BadJwtException) {
-            message = "Invalid JWT signature or malformed token";
-        } else if (cause instanceof JwtException) {
-            message = "JWT validation failed (expired or invalid claims)";
-        }
-
-        PrintWriter writer = response.getWriter();
-        writer.write("{\"code\":401,\"message\":\"Unauthorized: " + message + "\"}");
-        writer.flush();
+        response.setCharacterEncoding("UTF-8");
+        response.getWriter().write(objectMapper.writeValueAsString(restResponse));
     }
 }

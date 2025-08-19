@@ -22,17 +22,15 @@ public class CustomJwtAuthenticationConverter implements Converter<Jwt, Collecti
         this.redisService = redisService;
     }
 
-
     // Chuyển đổi Jwt thành danh sách quyền
     @Override
     public Collection<GrantedAuthority> convert(Jwt jwt) {
 
         String jti = jwt.getId();
 
-       if (jti != null && redisService.isInBlacklist(jti)) {
-           throw new BadCredentialsException("Token đã bị revoke (blacklisted)");
-       }
-
+        if (jti != null && redisService.isInBlacklist(jti)) {
+            throw new BadCredentialsException("Token has been blacklisted");
+        }
 
         List<?> roles = jwt.getClaim("roles");
 

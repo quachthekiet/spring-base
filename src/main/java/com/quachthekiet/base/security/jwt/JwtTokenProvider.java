@@ -47,6 +47,13 @@ public class JwtTokenProvider {
                 .subject(customUserDetails.getUsername())
                 .id(UUID.randomUUID().toString())
                 .build();
+
+                System.out.println("=== Generate JWT ===");
+        System.out.println("Username: " + customUserDetails.getUsername());
+        System.out.println("IssuedAt: " + now);
+        System.out.println("Expires : " + validity);
+        System.out.println("JTI     : " + claims.getId());
+        System.out.println("====================");
         JwsHeader jwsHeader = JwsHeader.with(jwtAlgorithmProvider.getMacAlgorithm()).build();
         return this.jwtEncoder.encode(JwtEncoderParameters.from(jwsHeader, claims)).getTokenValue();
     }

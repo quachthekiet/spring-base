@@ -5,7 +5,7 @@ import com.nimbusds.jose.util.Base64;
 import com.quachthekiet.base.security.jwt.CustomJwtAuthenticationConverter;
 import com.quachthekiet.base.security.jwt.JwtAccessDeniedHandler;
 import com.quachthekiet.base.security.jwt.JwtAlgorithmProvider;
-import com.quachthekiet.base.security.jwt.JwtEntryPoint;
+import com.quachthekiet.base.security.jwt.JwtAuthenticationEntryPoint;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -71,16 +71,16 @@ public class SecurityConfiguration {
 			"/api/users/**"
 	};
 
-	private final JwtEntryPoint jwtEntryPoint;
+	private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
 	private final JwtAccessDeniedHandler jwtAccessDeniedHandler;
 	private final JwtAlgorithmProvider jwtAlgorithmProvider;
 	private final CustomJwtAuthenticationConverter customJwtAuthenticationConverter;
 
-	public SecurityConfiguration(JwtEntryPoint jwtEntryPoint,
+	public SecurityConfiguration(JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint,
 			JwtAccessDeniedHandler jwtAccessDeniedHandler,
 			JwtAlgorithmProvider jwtAlgorithmProvider,
 			CustomJwtAuthenticationConverter customJwtAuthenticationConverter) {
-		this.jwtEntryPoint = jwtEntryPoint;
+		this.jwtAuthenticationEntryPoint = jwtAuthenticationEntryPoint;
 		this.jwtAccessDeniedHandler = jwtAccessDeniedHandler;
 		this.jwtAlgorithmProvider = jwtAlgorithmProvider;
 		this.customJwtAuthenticationConverter = customJwtAuthenticationConverter;
@@ -90,19 +90,20 @@ public class SecurityConfiguration {
 	public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 		http
 				.csrf(csrf -> csrf.disable())
-				.exceptionHandling(exceptions -> exceptions
-						.authenticationEntryPoint(jwtEntryPoint)
-						.accessDeniedHandler(jwtAccessDeniedHandler))
+				// .exceptionHandling(exceptions -> exceptions exception handling cho global
+				// .authenticationEntryPoint(jwtEntryPoint)
+				// .accessDeniedHandler(jwtAccessDeniedHandler))
 				.authorizeHttpRequests(
 						auth -> auth.requestMatchers(publicEndpoints).permitAll()
-								.requestMatchers("/api/auth/logout").permitAll()
-								.requestMatchers(userEndpoints).hasAnyAuthority("ROLE_USER", "ROLE_ADMIN")
+								.requestMatchers(userEndpoints).hasAnyAuthority("ROLE_USER")
 								.requestMatchers(adminEndpoints).hasAnyAuthority("ROLE_ADMIN")
 								.anyRequest().authenticated())
 				.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 				.oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt -> jwt
 						.decoder(jwtDecoder())
-						.jwtAuthenticationConverter(jwtAuthenticationConverter())))
+						.jwtAuthenticationConverter(jwtAuthenticationConverter()))
+						.authenticationEntryPoint(jwtAuthenticationEntryPoint)
+						.accessDeniedHandler(jwtAccessDeniedHandler))
 				.cors(cors -> cors.configurationSource(corsConfigurationSource()));
 
 		// http.addFilterBefore(jwtFilter, BasicAuthenticationFilter.class);
