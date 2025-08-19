@@ -17,7 +17,7 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
 
 @Configuration
 @EnableCaching
-public class RedisConfig {
+public class RedisConfigiguration {
 
     @Value("${spring.cache.redis.key-prefix}")
     private String prefix;

@@ -5,8 +5,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.quachthekiet.base.model.RestResponse;
-import com.quachthekiet.base.model.User;
 import com.quachthekiet.base.service.UserService;
 
 @RestController

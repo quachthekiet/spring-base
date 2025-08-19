@@ -1,12 +1,8 @@
 package com.quachthekiet.base.security.jwt;
 
 import java.io.IOException;
-import java.io.PrintWriter;
-
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.AuthenticationException;
-import org.springframework.security.oauth2.jwt.BadJwtException;
-import org.springframework.security.oauth2.jwt.JwtException;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.stereotype.Component;
 

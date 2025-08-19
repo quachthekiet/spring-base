@@ -51,4 +51,12 @@ public class GlobalExceptionHandler {
         response.setMessage(e.getMessage());
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
     }
+
+    @ExceptionHandler(BadCredentialsException.class)
+    public ResponseEntity<RestResponse<?>> handleBadCredentialsException(BadCredentialsException e) {
+        RestResponse<String> response = new RestResponse<>();
+        response.setCode(HttpStatus.UNAUTHORIZED.value());
+        response.setMessage(e.getMessage());
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+    }
 }
