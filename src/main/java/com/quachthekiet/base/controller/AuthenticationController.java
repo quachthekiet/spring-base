@@ -10,8 +10,8 @@ import org.springframework.web.bind.annotation.*;
 import com.quachthekiet.base.model.AuthRequest;
 import com.quachthekiet.base.model.RestResponse;
 import com.quachthekiet.base.security.jwt.JwtTokenProvider;
-import com.quachthekiet.base.service.AuthenticationService;
-import com.quachthekiet.base.service.RedisService;
+import com.quachthekiet.base.service.Impl.AuthenticationService;
+import com.quachthekiet.base.service.Impl.RedisService;
 
 import jakarta.validation.Valid;
 
@@ -37,7 +37,9 @@ public class AuthenticationController {
 
         Authentication authentication = authenticationService.authenticateUser(authRequest.getEmail(),
                 authRequest.getPassword());
-
+        
+        
+        
         String token = jwtTokenProvider.generateToken(authentication);
         RestResponse<String> response = new RestResponse<>();
         response.setCode(HttpStatus.OK.value());
