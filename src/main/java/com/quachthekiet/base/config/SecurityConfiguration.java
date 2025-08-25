@@ -1,23 +1,18 @@
 package com.quachthekiet.base.config;
 
-import com.nimbusds.jose.jwk.source.ImmutableSecret;
-import com.nimbusds.jose.util.Base64;
-import com.quachthekiet.base.security.jwt.CustomJwtAuthenticationConverter;
-import com.quachthekiet.base.security.jwt.JwtAccessDeniedHandler;
-import com.quachthekiet.base.security.jwt.JwtAlgorithmProvider;
-import com.quachthekiet.base.security.jwt.JwtAuthenticationEntryPoint;
-import com.quachthekiet.base.security.jwt.JwtBlacklistFilter;
+import java.util.List;
+
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
@@ -31,9 +26,13 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-import javax.crypto.SecretKey;
-import javax.crypto.spec.SecretKeySpec;
-import java.util.List;
+import com.nimbusds.jose.jwk.source.ImmutableSecret;
+import com.nimbusds.jose.util.Base64;
+import com.quachthekiet.base.security.jwt.CustomJwtAuthenticationConverter;
+import com.quachthekiet.base.security.jwt.JwtAccessDeniedHandler;
+import com.quachthekiet.base.security.jwt.JwtAlgorithmProvider;
+import com.quachthekiet.base.security.jwt.JwtAuthenticationEntryPoint;
+import com.quachthekiet.base.security.jwt.JwtBlacklistFilter;
 
 @Configuration
 @EnableWebSecurity
@@ -52,7 +51,7 @@ public class SecurityConfiguration {
 	private boolean allowCredentials;
 
 	@Bean
-	public PasswordEncoder passwordEncoder() {
+	PasswordEncoder passwordEncoder() {
 		return new BCryptPasswordEncoder(10);
 	}
 
@@ -96,7 +95,7 @@ public class SecurityConfiguration {
 	}
 
 	@Bean
-	public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+	SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 		http
 				.csrf(csrf -> csrf.disable())
 				// .exceptionHandling(exceptions -> exceptions exception handling cho global
@@ -126,7 +125,7 @@ public class SecurityConfiguration {
 	}
 
 	@Bean
-	public CorsConfigurationSource corsConfigurationSource() {
+	CorsConfigurationSource corsConfigurationSource() {
 		CorsConfiguration corsConfiguration = new CorsConfiguration();
 		corsConfiguration.setAllowedOrigins(List.of(allowedOrigins.split(","))); // Split by comma if multiple origins
 		corsConfiguration.setAllowedMethods(List.of(allowedMethods.split(","))); // Split by comma if multiple methods
@@ -139,7 +138,7 @@ public class SecurityConfiguration {
 	}
 
 	@Bean
-	public JwtDecoder jwtDecoder() {
+	JwtDecoder jwtDecoder() {
 		return NimbusJwtDecoder.withSecretKey(getSecretKey())
 				.macAlgorithm(jwtAlgorithmProvider.getMacAlgorithm())
 				.build();
@@ -151,12 +150,12 @@ public class SecurityConfiguration {
 	}
 
 	@Bean
-	public JwtEncoder jwtEncoder() {
+	JwtEncoder jwtEncoder() {
 		return new NimbusJwtEncoder(new ImmutableSecret<>(getSecretKey()));
 	}
 
 	@Bean
-	public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
+	AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
 		return config.getAuthenticationManager();
 	}
 }

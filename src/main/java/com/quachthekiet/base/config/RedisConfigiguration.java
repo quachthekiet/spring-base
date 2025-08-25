@@ -26,7 +26,7 @@ public class RedisConfigiguration {
     private long timeToLive;
 
     @Bean
-    public RedisTemplate<String, Object> redisTemplate(RedisConnectionFactory factory) {
+    RedisTemplate<String, Object> redisTemplate(RedisConnectionFactory factory) {
         RedisTemplate<String, Object> template = new RedisTemplate<>();
         template.setConnectionFactory(factory);
 
@@ -54,7 +54,7 @@ public class RedisConfigiguration {
     // }
 
     @Bean
-    public CacheManager cacheManager(RedisConnectionFactory connectionFactory) {
+    CacheManager cacheManager(RedisConnectionFactory connectionFactory) {
         RedisCacheConfiguration config = RedisCacheConfiguration
                 .defaultCacheConfig()
                 .prefixCacheNameWith(prefix + ":")

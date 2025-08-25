@@ -1,5 +1,6 @@
 package com.quachthekiet.base.service.Impl;
 
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -7,8 +8,6 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-
-import org.springframework.beans.factory.annotation.Qualifier;
 
 @Service
 public class AuthenticationService {
@@ -27,12 +26,7 @@ public class AuthenticationService {
     public Authentication authenticateUser(String email, String password) {
 
         UserDetails user = userDetailsService.loadUserByUsername(email);
-
-        // System.out.println("PasswordHash: " + passwordEncoder.encode(password));
-        // if (user == null || !passwordEncoder.matches(password, user.getPassword())) {
-        // throw new BadCredentialsException("Invalid email or password");
-        // }
-
+        System.out.println("PasswordHash: " + passwordEncoder.encode(password));
         Authentication authentication = authenticationManager
                 .authenticate(new UsernamePasswordAuthenticationToken(user, password, user.getAuthorities()));
 

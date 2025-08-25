@@ -5,7 +5,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import com.quachthekiet.base.model.AuthRequest;
 import com.quachthekiet.base.model.RestResponse;
@@ -37,9 +40,7 @@ public class AuthenticationController {
 
         Authentication authentication = authenticationService.authenticateUser(authRequest.getEmail(),
                 authRequest.getPassword());
-        
-        
-        
+
         String token = jwtTokenProvider.generateToken(authentication);
         RestResponse<String> response = new RestResponse<>();
         response.setCode(HttpStatus.OK.value());
@@ -59,8 +60,12 @@ public class AuthenticationController {
             try {
                 Jwt jwt = jwtDecoder.decode(token);
                 String jti = jwt.getId();
-                long ttl = jwt.getExpiresAt().getEpochSecond() - System.currentTimeMillis() / 1000;
-                redisService.addToBlacklist(jti, ttl);
+                var expiresAt = jwt.getExpiresAt();
+                if (expiresAt != null) {
+                    long ttl = expiresAt.getEpochSecond() - System.currentTimeMillis() / 1000;
+                    redisService.addToBlacklist(jti, ttl);
+                }
+
             } catch (Exception e) {
                 // token invalid hoặc expired -> ignore
             }
