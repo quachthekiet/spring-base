@@ -3,7 +3,6 @@ package com.quachthekiet.base.service.Impl;
 import java.util.Collection;
 
 import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import com.quachthekiet.base.exception.NotFoundException;
@@ -19,7 +18,7 @@ public class UserService implements IUserService {
         this.userRepository = userRepository;
     }
 
-    @Cacheable(value = "users", key = "'all'")
+    // @Cacheable(value = "users", key = "'all'")
     public Collection<User> getAllUsers() {
         return userRepository.findAll();
     }
@@ -34,6 +33,14 @@ public class UserService implements IUserService {
 
         return userRepository.save(user);
 
+    }
+
+    public User getUserByEmail(String email) {
+        User user = userRepository.findByEmail(email);
+        if (user == null) {
+            throw new NotFoundException("User not found");
+        }
+        return user;
     }
 
     @Override

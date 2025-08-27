@@ -1,5 +1,6 @@
 package com.quachthekiet.base.config;
 
+import java.util.Arrays;
 import java.util.List;
 
 import javax.crypto.SecretKey;
@@ -20,8 +21,11 @@ import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
+import org.springframework.security.oauth2.server.resource.web.BearerTokenResolver;
+import org.springframework.security.oauth2.server.resource.web.DefaultBearerTokenResolver;
 import org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.util.AntPathMatcher;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -107,15 +111,31 @@ public class SecurityConfiguration {
 								.requestMatchers(adminEndpoints).hasAnyAuthority("ROLE_ADMIN")
 								.anyRequest().authenticated())
 				.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-				.oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt -> jwt
-						.decoder(jwtDecoder())
-						.jwtAuthenticationConverter(jwtAuthenticationConverter()))
+				.oauth2ResourceServer(oauth2 -> oauth2
+						.jwt(jwt -> jwt
+								.decoder(jwtDecoder())
+								.jwtAuthenticationConverter(jwtAuthenticationConverter()))
 						.authenticationEntryPoint(jwtAuthenticationEntryPoint)
-						.accessDeniedHandler(jwtAccessDeniedHandler))
+						.accessDeniedHandler(jwtAccessDeniedHandler)
+						.bearerTokenResolver(bearerTokenResolver()))
 				.cors(cors -> cors.configurationSource(corsConfigurationSource()));
-
 		http.addFilterAfter(jwtBlacklistFilter, BearerTokenAuthenticationFilter.class);
 		return http.build();
+	}
+
+	@Bean
+	BearerTokenResolver bearerTokenResolver() {
+		return request -> {
+			String requestPath = request.getRequestURI();
+			// Bỏ qua token cho public endpoints
+			boolean isPublicEndpoint = Arrays.stream(publicEndpoints)
+					.anyMatch(pattern -> new AntPathMatcher().match(pattern, requestPath));
+			if (isPublicEndpoint) {
+				return null;
+			}
+			// Sử dụng default resolver cho protected endpoints
+			return new DefaultBearerTokenResolver().resolve(request);
+		};
 	}
 
 	private JwtAuthenticationConverter jwtAuthenticationConverter() {

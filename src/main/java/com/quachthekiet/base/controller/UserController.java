@@ -1,6 +1,8 @@
 package com.quachthekiet.base.controller;
 
+import org.springframework.security.core.Authentication;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -10,6 +12,8 @@ import com.quachthekiet.base.service.IUserService;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestParam;
+
 
 @RestController
 @RequestMapping("/api/users")
@@ -42,4 +46,11 @@ public class UserController {
 		}
 		return ResponseEntity.ok(user);
 	}
+	@GetMapping("/context")
+	public ResponseEntity<?> getMethodName() {
+		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+		return ResponseEntity.ok(authentication.getPrincipal());
+	}
+
 }

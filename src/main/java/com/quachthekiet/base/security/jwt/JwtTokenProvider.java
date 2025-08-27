@@ -25,6 +25,9 @@ public class JwtTokenProvider {
     @Value("${jwt.algorithm}")
     private String jwtAlgorithm;
 
+    @Value("${jwt.refresh-token-expiration-in-seconds}")
+    private long jwtRefreshTokenExpirationInS;
+
     private final JwtEncoder jwtEncoder;
     private final JwtDecoder jwtDecoder;
     private final JwtAlgorithmProvider jwtAlgorithmProvider;
@@ -48,12 +51,21 @@ public class JwtTokenProvider {
                 .id(UUID.randomUUID().toString())
                 .build();
 
-                System.out.println("=== Generate JWT ===");
-        System.out.println("Username: " + customUserDetails.getUsername());
-        System.out.println("IssuedAt: " + now);
-        System.out.println("Expires : " + validity);
-        System.out.println("JTI     : " + claims.getId());
-        System.out.println("====================");
+        JwsHeader jwsHeader = JwsHeader.with(jwtAlgorithmProvider.getMacAlgorithm()).build();
+        return this.jwtEncoder.encode(JwtEncoderParameters.from(jwsHeader, claims)).getTokenValue();
+    }
+
+    public String generateRefreshToken(String username) {
+        Instant now = Instant.now();
+        Instant validity = now.plusSeconds(jwtRefreshTokenExpirationInS);
+
+        JwtClaimsSet claims = JwtClaimsSet.builder()
+                .issuedAt(now)
+                .expiresAt(validity)
+                .subject(username)
+                .id(UUID.randomUUID().toString())
+                .build();
+
         JwsHeader jwsHeader = JwsHeader.with(jwtAlgorithmProvider.getMacAlgorithm()).build();
         return this.jwtEncoder.encode(JwtEncoderParameters.from(jwsHeader, claims)).getTokenValue();
     }

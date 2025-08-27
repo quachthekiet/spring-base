@@ -1,6 +1,7 @@
 package com.quachthekiet.base.service.Impl;
 
 import java.util.concurrent.TimeUnit;
+
 import org.springframework.data.redis.RedisConnectionFailureException;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
@@ -36,6 +37,6 @@ public class RedisService {
     }
 
     public void addToBlacklist(String token, long expSeconds) {
-        redisTemplate.opsForValue().set(token, "blacklisted", expSeconds, TimeUnit.SECONDS);
+        save(token, "blacklisted", expSeconds);
     }
 }
