@@ -1,10 +1,13 @@
 package com.quachthekiet.base.security.jwt;
 
 import java.time.Instant;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.oauth2.jwt.JwsHeader;
 import org.springframework.security.oauth2.jwt.JwtClaimsSet;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
@@ -43,10 +46,15 @@ public class JwtTokenProvider {
         Instant validity = now.plusSeconds(jwtExpirationInS);
 
         CustomUserDetails customUserDetails = (CustomUserDetails) authentication.getPrincipal();
+
+        Set<String> roles = customUserDetails.getAuthorities()
+                .stream()
+                .map(GrantedAuthority::getAuthority)
+                .collect(Collectors.toSet());
         JwtClaimsSet claims = JwtClaimsSet.builder()
                 .issuedAt(now)
                 .expiresAt(validity)
-                .claim("roles", customUserDetails.getAuthorities())
+                .claim("roles", roles)
                 .subject(customUserDetails.getUsername())
                 .id(UUID.randomUUID().toString())
                 .build();
