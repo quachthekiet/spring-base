@@ -25,11 +25,6 @@ public class CustomJwtAuthenticationConverter implements Converter<Jwt, Collecti
     @Override
     public Collection<GrantedAuthority> convert(@NonNull Jwt jwt) {
 
-        List<?> roles = jwt.getClaim("roles");
-        if (roles == null) {
-            return List.of();
-        }
-
         String email = Objects.requireNonNull(jwt.getSubject(), "JWT subject (email) must not be null");
 
         UserDetails userDetails = Objects.requireNonNull(

@@ -4,6 +4,7 @@ import java.time.Instant;
 
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -41,10 +42,13 @@ public class AuthService {
 
         UserDetails user = userDetailsService.loadUserByUsername(email);
         System.out.println("PasswordHash: " + passwordEncoder.encode(password));
-        Authentication authentication = authenticationManager
+        try{
+            Authentication authentication = authenticationManager
                 .authenticate(new UsernamePasswordAuthenticationToken(user, password, user.getAuthorities()));
-
-        return authentication;
+                return authentication;
+        } catch (BadCredentialsException e){
+            throw new BadCredentialsException("Wrong password");
+        }
     }
 
     public String refreshAccessToken(String refreshHeader) {
