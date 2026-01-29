@@ -7,7 +7,7 @@ on:
     branches: [ "main" ]
 
 jobs:
-  docker:
+  ci:
     name: Build & Push Docker Image
     runs-on: ubuntu-latest
 
@@ -41,3 +41,10 @@ jobs:
         with:
           push: true
           tags: ${{ secrets.DOCKER_USERNAME }}/spring-base:latest
+  cd:
+    needs: ci
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy
+        run: echo "Deploy step here"
+  
