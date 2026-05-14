@@ -9,7 +9,9 @@ import javax.naming.ServiceUnavailableException;
 import org.springframework.data.redis.RedisConnectionFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -17,7 +19,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
-import com.quachthekiet.base.model.RestResponse;
+import com.quachthekiet.base.common.RestResponse;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -82,6 +84,30 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(TokenRevokedException.class)
     public ResponseEntity<RestResponse<?>> handleTokenRevokedException(TokenRevokedException e) {
+        RestResponse<String> response = new RestResponse<>();
+        response.setCode(HttpStatus.UNAUTHORIZED.value());
+        response.setMessage(e.getMessage());
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+    }
+
+    @ExceptionHandler(AuthenticationException.class)
+    public ResponseEntity<RestResponse<?>> handleAuthenticationException(AuthenticationException e) {
+        RestResponse<String> response = new RestResponse<>();
+        response.setCode(HttpStatus.UNAUTHORIZED.value());
+        response.setMessage(e.getMessage());
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<RestResponse<?>> handleAccessDeniedException(AccessDeniedException e) {
+        RestResponse<String> response = new RestResponse<>();
+        response.setCode(HttpStatus.FORBIDDEN.value());
+        response.setMessage(e.getMessage());
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
+    }
+
+    @ExceptionHandler(InvalidTokenException.class)
+    public ResponseEntity<RestResponse<?>> handleInvalidTokenException(InvalidTokenException e) {
         RestResponse<String> response = new RestResponse<>();
         response.setCode(HttpStatus.UNAUTHORIZED.value());
         response.setMessage(e.getMessage());

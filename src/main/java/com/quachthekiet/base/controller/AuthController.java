@@ -1,28 +1,31 @@
 package com.quachthekiet.base.controller;
 
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.quachthekiet.base.constant.TokenCookieConstants;
 import com.quachthekiet.base.model.AuthRequest;
 import com.quachthekiet.base.model.AuthResponse;
-import com.quachthekiet.base.model.RestResponse;
+import com.quachthekiet.base.common.RestResponse;
 import com.quachthekiet.base.security.jwt.JwtTokenProvider;
-import com.quachthekiet.base.service.Impl.AuthService;
+import com.quachthekiet.base.service.AuthService;
+import com.quachthekiet.base.service.UserService;
 import com.quachthekiet.base.service.Impl.RedisService;
-import com.quachthekiet.base.service.Impl.UserService;
 
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("/api/auth")
+@RequiredArgsConstructor
 public class AuthController {
 
     private final AuthService authService;
@@ -31,65 +34,65 @@ public class AuthController {
     private final JwtDecoder jwtDecoder;
     private final UserService userService;
 
-    public AuthController(AuthService authService, JwtTokenProvider jwtTokenProvider,
-            RedisService redisService, JwtDecoder jwtDecoder,
-            UserService userService) {
-        this.authService = authService;
-        this.jwtTokenProvider = jwtTokenProvider;
-        this.redisService = redisService;
-        this.jwtDecoder = jwtDecoder;
-        this.userService = userService;
-    }
-
     @PostMapping("/login")
-    public ResponseEntity<RestResponse<?>> login(@RequestBody @Valid AuthRequest authRequest) {
+    public ResponseEntity<RestResponse<String>> login(@RequestBody @Valid AuthRequest authRequest) {
+        AuthResponse authResponse = authService.authenticate(authRequest);
 
-        Authentication authentication = authService.authenticateUser(authRequest.getEmail(),
-                authRequest.getPassword());
-
-        String token = jwtTokenProvider.generateToken(authentication);
-
-        String refreshToken = jwtTokenProvider.generateRefreshToken(authentication.getName());
-        var user = userService.getUserByEmail(authentication.getName());
-        user.setRefreshToken(refreshToken);
-        userService.updateUser(user);
-
-        RestResponse<AuthResponse> response = new RestResponse<>();
-        response.setCode(HttpStatus.OK.value());
-        response.setMessage("Login success");
-        response.setData(AuthResponse.builder()
-                .accessToken(token)
-                .refreshToken(refreshToken)
-                .build());
-        return ResponseEntity.status(HttpStatus.OK).body(response);
+        return withAuthCookies(authResponse)
+                .body(RestResponse.success("Đăng nhập thành công"));
     }
 
-    @PostMapping("refresh-token")
-    public String postMethodName(@RequestHeader("Authorization") String refreshHeader) {
-        return authService.refreshAccessToken(refreshHeader);
+    @PostMapping("/refresh")
+    public ResponseEntity<RestResponse<String>> refreshToken(
+            @CookieValue(name = TokenCookieConstants.REFRESH_TOKEN_COOKIE, required = false) String refreshToken) {
+
+        AuthResponse authResponse = authService.refreshToken(refreshToken);
+
+        return withAuthCookies(authResponse)
+                .body(RestResponse.success("Lấy token mới thành công"));
     }
 
     @PostMapping("/logout")
-    public String logout(@RequestHeader("Authorization") String token) {
-        if (token != null && !token.isBlank()) {
-            // Nếu client gửi token kèm "Bearer " thì cắt bỏ
-            if (token.startsWith("Bearer ")) {
-                token = token.substring(7);
-            }
-            try {
-                Jwt jwt = jwtDecoder.decode(token);
-                String jti = jwt.getId();
-                var expiresAt = jwt.getExpiresAt();
-                if (expiresAt != null) {
-                    long ttl = expiresAt.getEpochSecond() - System.currentTimeMillis() / 1000;
-                    redisService.addToBlacklist(jti, ttl);
-                }
+    public ResponseEntity<RestResponse<?>> logout(
+            @CookieValue(name = TokenCookieConstants.REFRESH_TOKEN_COOKIE, required = false) String refreshToken) {
 
-            } catch (Exception e) {
-                // token invalid hoặc expired -> ignore
-            }
+        authService.logout(refreshToken);
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE,
+                        buildClearCookie(TokenCookieConstants.ACCESS_TOKEN_COOKIE, "/").toString())
+                .header(HttpHeaders.SET_COOKIE,
+                        buildClearCookie(TokenCookieConstants.REFRESH_TOKEN_COOKIE, "/api/auth/refresh").toString())
+                .body(RestResponse.success("Đăng xuất thành công"));
+    }
+
+    /**
+     * Tối ưu helper để trả về BodyBuilder đã được cấu hình sẵn Cookie
+     */
+    private ResponseEntity.BodyBuilder withAuthCookies(AuthResponse authResponse) {
+        ResponseEntity.BodyBuilder builder = ResponseEntity.ok();
+
+        if (authResponse.getAccessTokenCookie() != null) {
+            builder.header(HttpHeaders.SET_COOKIE, authResponse.getAccessTokenCookie().toString());
         }
-        return "Success";
+
+        if (authResponse.getRefreshTokenCookie() != null) {
+            // Lưu ý: Dùng .header() lần 2 với cùng key HttpHeaders.SET_COOKIE
+            // trong Spring sẽ tự động append thêm vào danh sách header thay vì ghi đè.
+            builder.header(HttpHeaders.SET_COOKIE, authResponse.getRefreshTokenCookie().toString());
+        }
+
+        return builder;
+    }
+
+    private ResponseCookie buildClearCookie(String name, String path) {
+        return ResponseCookie.from(name, "")
+                .httpOnly(true)
+                .secure(true) // Nên luôn để true trong production
+                .sameSite("Lax")
+                .path(path)
+                .maxAge(0) // Xóa ngay lập tức
+                .build();
     }
 
 }

@@ -27,17 +27,22 @@ import org.springframework.security.oauth2.server.resource.web.DefaultBearerToke
 import org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.util.AntPathMatcher;
+import org.springframework.util.StringUtils;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import com.nimbusds.jose.jwk.source.ImmutableSecret;
 import com.nimbusds.jose.util.Base64;
+import com.quachthekiet.base.constant.TokenCookieConstants;
 import com.quachthekiet.base.security.jwt.CustomJwtAuthenticationConverter;
 import com.quachthekiet.base.security.jwt.JwtAccessDeniedHandler;
 import com.quachthekiet.base.security.jwt.JwtAlgorithmProvider;
 import com.quachthekiet.base.security.jwt.JwtAuthenticationEntryPoint;
 import com.quachthekiet.base.security.jwt.JwtBlacklistFilter;
+
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
 
 @Configuration
 @EnableWebSecurity
@@ -96,9 +101,6 @@ public class SecurityConfiguration {
 	SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 		http
 				.csrf(csrf -> csrf.disable())
-				// .exceptionHandling(exceptions -> exceptions exception handling cho global
-				// .authenticationEntryPoint(jwtEntryPoint)
-				// .accessDeniedHandler(jwtAccessDeniedHandler))
 				.authorizeHttpRequests(
 						auth -> auth.requestMatchers(publicEndpoints).permitAll()
 								.anyRequest().authenticated())
@@ -125,9 +127,27 @@ public class SecurityConfiguration {
 			if (isPublicEndpoint) {
 				return null;
 			}
-			// Sử dụng default resolver cho protected endpoints
-			return new DefaultBearerTokenResolver().resolve(request);
+			String tokenFromHeader = new DefaultBearerTokenResolver().resolve(request);
+			if (StringUtils.hasText(tokenFromHeader)) {
+				return tokenFromHeader;
+			}
+
+			return extractAccessTokenFromCookie(request);
 		};
+	}
+
+	private String extractAccessTokenFromCookie(HttpServletRequest request) {
+		Cookie[] cookies = request.getCookies();
+		if (cookies == null) {
+			return null;
+		}
+
+		return Arrays.stream(cookies)
+				.filter(cookie -> TokenCookieConstants.ACCESS_TOKEN_COOKIE.equals(cookie.getName()))
+				.map(Cookie::getValue)
+				.filter(StringUtils::hasText)
+				.findFirst()
+				.orElse(null);
 	}
 
 	private JwtAuthenticationConverter jwtAuthenticationConverter() {

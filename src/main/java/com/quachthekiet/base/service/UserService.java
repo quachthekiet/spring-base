@@ -5,7 +5,7 @@ import java.util.Collection;
 import com.quachthekiet.base.dto.UserDTO;
 import com.quachthekiet.base.model.User;
 
-public interface IUserService {
+public interface UserService {
 
     User getUserById(int id);
 

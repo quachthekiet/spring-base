@@ -13,8 +13,10 @@ import org.springframework.security.oauth2.jwt.JwtClaimsSet;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
+import org.springframework.security.oauth2.jwt.JwtException;
 import org.springframework.stereotype.Component;
 
+import com.quachthekiet.base.exception.InvalidTokenException;
 import com.quachthekiet.base.security.model.CustomUserDetails;
 
 @Component
@@ -22,14 +24,11 @@ public class JwtTokenProvider {
     @Value("${jwt.base64-secret}")
     private String jwtKey;
 
-    @Value("${jwt.token-expiration-in-seconds}")
-    private long jwtExpirationInS;
+    @Value("${jwt.access-token-validity-in-seconds}")
+    private long jwtAccessTokenValidityInS;
 
-    @Value("${jwt.algorithm}")
-    private String jwtAlgorithm;
-
-    @Value("${jwt.refresh-token-expiration-in-seconds}")
-    private long jwtRefreshTokenExpirationInS;
+    @Value("${jwt.refresh-token-validity-in-seconds}")
+    private long jwtRefreshTokenExpirationIn;
 
     private final JwtEncoder jwtEncoder;
     private final JwtDecoder jwtDecoder;
@@ -43,18 +42,18 @@ public class JwtTokenProvider {
 
     public String generateToken(Authentication authentication) {
         Instant now = Instant.now();
-        Instant validity = now.plusSeconds(jwtExpirationInS);
+        Instant validity = now.plusSeconds(jwtAccessTokenValidityInS);
 
         CustomUserDetails customUserDetails = (CustomUserDetails) authentication.getPrincipal();
 
-        Set<String> roles = customUserDetails.getAuthorities()
+        Set<String> authorities = customUserDetails.getAuthorities()
                 .stream()
                 .map(GrantedAuthority::getAuthority)
                 .collect(Collectors.toSet());
         JwtClaimsSet claims = JwtClaimsSet.builder()
                 .issuedAt(now)
                 .expiresAt(validity)
-                .claim("roles", roles)
+                .claim("authorities", authorities)
                 .subject(customUserDetails.getUsername())
                 .id(UUID.randomUUID().toString())
                 .build();
@@ -65,7 +64,7 @@ public class JwtTokenProvider {
 
     public String generateRefreshToken(String username) {
         Instant now = Instant.now();
-        Instant validity = now.plusSeconds(jwtRefreshTokenExpirationInS);
+        Instant validity = now.plusSeconds(jwtRefreshTokenExpirationIn);
 
         JwtClaimsSet claims = JwtClaimsSet.builder()
                 .issuedAt(now)
@@ -78,7 +77,11 @@ public class JwtTokenProvider {
         return this.jwtEncoder.encode(JwtEncoderParameters.from(jwsHeader, claims)).getTokenValue();
     }
 
-    public String getUsernameFromToken(String token) {
-        return this.jwtDecoder.decode(token).getSubject();
+    public String extractEmail(String token) {
+        try {
+            return this.jwtDecoder.decode(token).getSubject();
+        } catch (JwtException e) {
+            throw new InvalidTokenException("Token không hợp lệ hoặc đã hết hạn", e);
+        }
     }
 }

@@ -14,7 +14,7 @@ spring:
   # JPA/Hibernate Configuration
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: create
     show-sql: true
 
   # CORS configuration
@@ -39,8 +39,7 @@ spring:
 # Config jwt
 jwt:
   base64-secret: TDztjuiGG+/hJplhARIzotz+eTCq7QpHz1XNN1g5QlaA41Ack3ybKFp/fbs5LLdH5zX+/WKIh6/1Z7jEJn2umA==
-  token-expiration-in-seconds: 900
-  algorithm: HS512
-  refresh-token-expiration-in-seconds: 604800
+  access-token-validity-in-seconds: 900
+  refresh-token-validity-in-seconds: 604800
 
 # Swagger configuration
