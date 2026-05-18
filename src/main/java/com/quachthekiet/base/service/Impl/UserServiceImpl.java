@@ -5,6 +5,7 @@ import java.util.Collection;
 import org.springframework.stereotype.Service;
 
 import com.quachthekiet.base.dto.UserDTO;
+import com.quachthekiet.base.exception.NotFoundException;
 import com.quachthekiet.base.mapper.UserMapper;
 import com.quachthekiet.base.model.User;
 import com.quachthekiet.base.repository.UserRepository;
@@ -20,8 +21,8 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public User getUserById(int id) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'getUserById'");
+        return userRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException(""));
     }
 
     @Override

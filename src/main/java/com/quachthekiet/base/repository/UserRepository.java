@@ -11,8 +11,7 @@ import com.quachthekiet.base.model.User;
 public interface UserRepository extends JpaRepository<User, Long> {
 
     Optional<User> findByEmail(String email);
-
-    User findById(long id);
+    Optional<User> findById(long id);
 
     void deleteById(long id);
 
